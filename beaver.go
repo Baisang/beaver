@@ -5,18 +5,41 @@ import (
 	"encoding/json"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 )
 
-type Message struct {
+type conf struct {
+	Server   string   `yaml:"server"`
+	Port     int64    `yaml:"port"`
+	UseSSL   bool     `yaml:"useSSL"`
+	Channels []string `yaml:"channels"`
+	Nick     string   `yaml:"nick"`
+}
+
+type message struct {
 	Channel string
 	Nick    string
 	Text    string
 	Time    int64
 }
 
+func (c *conf) getConf() *conf {
+	yamlFile, err := ioutil.ReadFile("conf.yaml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+	return c
+}
+
 func handlePRIVMSG(conn *irc.Conn, line *irc.Line) {
 	if line.Public() {
-		message := Message{
+		message := message{
 			Channel: line.Target(),
 			Nick:    line.Nick,
 			Text:    line.Text(),
@@ -28,15 +51,24 @@ func handlePRIVMSG(conn *irc.Conn, line *irc.Line) {
 }
 
 func main() {
-	cfg := irc.NewConfig("beaver-bot")
-	cfg.SSL = true
-	cfg.SSLConfig = &tls.Config{ServerName: "irc.ocf.berkeley.edu"}
-	cfg.Server = "irc.ocf.berkeley.edu:6697"
+	var beaverConf conf
+	beaverConf.getConf()
+	log.Printf("Loaded configuration for Beaver!")
+	blob, _ := yaml.Marshal(beaverConf)
+	log.Printf("Using configuration: \n%s", string(blob))
+
+	cfg := irc.NewConfig(beaverConf.Nick)
+	cfg.SSL = beaverConf.UseSSL
+	cfg.SSLConfig = &tls.Config{ServerName: beaverConf.Server}
+	cfg.Server = fmt.Sprintf("%s:%d", beaverConf.Server, beaverConf.Port)
 	cfg.NewNick = func(n string) string { return n + "^" }
 	c := irc.Client(cfg)
 
 	c.HandleFunc(irc.CONNECTED, func(conn *irc.Conn, line *irc.Line) {
-		conn.Join("#test")
+		for _, channel := range beaverConf.Channels {
+			log.Printf("Joining channel %s", channel)
+			c.Join(channel)
+		}
 	})
 
 	c.HandleFunc(irc.PRIVMSG, handlePRIVMSG)
