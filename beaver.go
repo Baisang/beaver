@@ -2,17 +2,28 @@ package main
 
 import (
 	"crypto/tls"
+    "encoding/json"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
 )
 
+type Message struct {
+    Channel string
+    Nick string
+    Text string
+    Time int64
+}
 
 func handlePRIVMSG(conn *irc.Conn, line *irc.Line) {
     if line.Public() {
-        channel := line.Target()
-        text := line.Text()
-        // line.Time
-        fmt.Printf("%s:%s:%s\n", channel, line.Nick, text)
+        message := Message{
+            Channel: line.Target(),
+            Nick: line.Nick,
+            Text: line.Text(),
+            Time: line.Time.Unix(),
+        }
+        blob, _ := json.Marshal(message)
+        fmt.Printf(string(blob))
     }
 }
 
