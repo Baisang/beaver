@@ -1,0 +1,8 @@
+# A sample configuration file for Beaver
+nick: beaver-bot
+server: irc.ocf.berkeley.edu
+port: 6697
+channels:
+  - "#test"
+  - "#test-channel"
+useSSL: true
