@@ -6,3 +6,5 @@ channels:
   - "#test"
   - "#test-channel"
 useSSL: true
+bootstrapServer: localhost:9092
+topicPrefix: beaver

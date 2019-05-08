@@ -11,11 +11,13 @@ import (
 )
 
 type conf struct {
-	Server   string   `yaml:"server"`
-	Port     int64    `yaml:"port"`
-	UseSSL   bool     `yaml:"useSSL"`
-	Channels []string `yaml:"channels"`
-	Nick     string   `yaml:"nick"`
+	Server           string   `yaml:"server"`
+	Port             int64    `yaml:"port"`
+	UseSSL           bool     `yaml:"useSSL"`
+	Channels         []string `yaml:"channels"`
+	Nick             string   `yaml:"nick"`
+	BootstrapServers string   `yaml:"bootstrapServers"` // Connection string for Kafka cluster
+	TopicPrefix      string   `yaml:"topicPrefix"`      // Topic prefix; topics will be made in the form {prefix}_{channel}
 }
 
 type message struct {
