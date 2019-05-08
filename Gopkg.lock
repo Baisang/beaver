@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:84ab4b69ddfe21972af21c0ed6980f41697eaf475e90734cedc8671729a18907"
+  name = "github.com/confluentinc/confluent-kafka-go"
+  packages = ["kafka"]
+  pruneopts = "UT"
+  revision = "a9b5c269c66e9a2eb5f195563b2f01e65a84c527"
+  version = "v0.9.4"
+
+[[projects]]
   digest = "1:94a3f73ea591491c6f30804064aab0ca425b6489155fc4d2665c7a1855155354"
   name = "github.com/fluffle/goirc"
   packages = [
@@ -44,6 +52,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/confluentinc/confluent-kafka-go/kafka",
     "github.com/fluffle/goirc/client",
     "gopkg.in/yaml.v2",
   ]
