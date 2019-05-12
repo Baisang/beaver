@@ -6,5 +6,5 @@ channels:
   - "#test"
   - "#test-channel"
 useSSL: true
-bootstrapServer: localhost:9092
+bootstrapServers: "kafka-0.kafka-svc.app-kafka.svc.cluster.local:9092,kafka-1.kafka-svc.app-kafka.svc.cluster.local:9092,kafka-2.kafka-svc.app-kafka.svc.cluster.local:9092"
 topicPrefix: beaver
