@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	irc "github.com/fluffle/goirc/client"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -27,6 +28,8 @@ type message struct {
 	Time    int64
 }
 
+var p *kafka.Producer
+
 func (c *conf) getConf() *conf {
 	yamlFile, err := ioutil.ReadFile("conf.yaml")
 	if err != nil {
@@ -39,16 +42,13 @@ func (c *conf) getConf() *conf {
 	return c
 }
 
-func handlePRIVMSG(conn *irc.Conn, line *irc.Line) {
-	if line.Public() {
-		message := message{
-			Channel: line.Target(),
-			Nick:    line.Nick,
-			Text:    line.Text(),
-			Time:    line.Time.Unix(),
+func bootstrapKafkaProducer(cfg *kafka.ConfigMap) {
+	if p == nil {
+		var err error
+		p, err = kafka.NewProducer(cfg)
+		if err != nil {
+			panic(err)
 		}
-		blob, _ := json.Marshal(message)
-		fmt.Printf(string(blob))
 	}
 }
 
@@ -58,6 +58,11 @@ func main() {
 	log.Printf("Loaded configuration for Beaver!")
 	blob, _ := yaml.Marshal(beaverConf)
 	log.Printf("Using configuration: \n%s", string(blob))
+
+	log.Printf("Starting Kafka producer")
+	bootstrapKafkaProducer(&kafka.ConfigMap{"bootstrap.servers": beaverConf.BootstrapServers})
+	defer p.Close()
+	log.Printf("Created Kafka producer")
 
 	cfg := irc.NewConfig(beaverConf.Nick)
 	cfg.SSL = beaverConf.UseSSL
@@ -73,7 +78,36 @@ func main() {
 		}
 	})
 
-	c.HandleFunc(irc.PRIVMSG, handlePRIVMSG)
+	deliveryChan := make(chan kafka.Event)
+
+	c.HandleFunc(irc.PRIVMSG, func(conn *irc.Conn, line *irc.Line) {
+		if line.Public() {
+			message := message{
+				Channel: line.Target(),
+				Nick:    line.Nick,
+				Text:    line.Text(),
+				Time:    line.Time.Unix(),
+			}
+			blob, _ := json.Marshal(message)
+			log.Printf("Received message: %s", blob)
+			topic := fmt.Sprintf("%s-%s", beaverConf.TopicPrefix, line.Target())
+			p.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+				Value:          []byte(blob),
+			}, deliveryChan)
+
+			e := <-deliveryChan
+			m := e.(*kafka.Message)
+
+			if m.TopicPartition.Error != nil {
+				fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
+			} else {
+				fmt.Printf("Delivered message to topic %s [%d] at offset %v\n",
+					*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+			}
+
+		}
+	})
 
 	quit := make(chan bool)
 	c.HandleFunc(irc.DISCONNECTED, func(conn *irc.Conn, line *irc.Line) {
