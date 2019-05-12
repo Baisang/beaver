@@ -90,8 +90,8 @@ func main() {
 			}
 			blob, _ := json.Marshal(message)
 			log.Printf("Received message: %s", blob)
-			topic := fmt.Sprintf("%s_%s", beaverConf.TopicPrefix, line.Target())
-            log.Printf("Attempting to produce message to topic %s", topic)
+			topic := fmt.Sprintf("%s_%s", beaverConf.TopicPrefix, line.Target()[1:])
+			log.Printf("Attempting to produce message to topic %s", topic)
 			p.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 				Value:          []byte(blob),
