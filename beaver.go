@@ -90,7 +90,8 @@ func main() {
 			}
 			blob, _ := json.Marshal(message)
 			log.Printf("Received message: %s", blob)
-			topic := fmt.Sprintf("%s-%s", beaverConf.TopicPrefix, line.Target())
+			topic := fmt.Sprintf("%s_%s", beaverConf.TopicPrefix, line.Target())
+            log.Printf("Attempting to produce message to topic %s", topic)
 			p.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 				Value:          []byte(blob),
@@ -100,9 +101,9 @@ func main() {
 			m := e.(*kafka.Message)
 
 			if m.TopicPartition.Error != nil {
-				fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
+				log.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
 			} else {
-				fmt.Printf("Delivered message to topic %s [%d] at offset %v\n",
+				log.Printf("Delivered message to topic %s [%d] at offset %v\n",
 					*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 			}
 
@@ -114,7 +115,7 @@ func main() {
 		quit <- true
 	})
 	if err := c.Connect(); err != nil {
-		fmt.Printf("Connection error: %s\n", err.Error())
+		log.Printf("Connection error: %s\n", err.Error())
 	}
 	<-quit
 }
