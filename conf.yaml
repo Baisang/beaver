@@ -3,6 +3,8 @@ nick: beaver-bot
 server: irc.ocf.berkeley.edu
 port: 6697
 channels:
+  - "#rebuild"
+  - "#ocf"
   - "#test"
   - "#test-channel"
 useSSL: true
