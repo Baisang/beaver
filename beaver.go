@@ -44,6 +44,7 @@ func (c *conf) getConf() *conf {
 
 func bootstrapKafkaProducer(cfg *kafka.ConfigMap) {
 	if p == nil {
+		cfg.Set("client.id=beaver")
 		var err error
 		p, err = kafka.NewProducer(cfg)
 		if err != nil {
