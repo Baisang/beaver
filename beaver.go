@@ -4,11 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	irc "github.com/fluffle/goirc/client"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	irc "github.com/fluffle/goirc/client"
 )
 
 type conf struct {
@@ -70,6 +72,7 @@ func main() {
 	cfg.SSLConfig = &tls.Config{ServerName: beaverConf.Server}
 	cfg.Server = fmt.Sprintf("%s:%d", beaverConf.Server, beaverConf.Port)
 	cfg.NewNick = func(n string) string { return n + "^" }
+	cfg.PingFreq = 60 * time.Second // Server's ping timeout thingy on irc.ocf is 120s
 	c := irc.Client(cfg)
 
 	c.HandleFunc(irc.CONNECTED, func(conn *irc.Conn, line *irc.Line) {
